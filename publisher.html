@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MQTT Publisher</title>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+</head>
+<body>
+    <h2>MQTT Publisher Website</h2>
+
+    <label>Broker URL:</label>
+    <input id="broker" value="ws://10.195.146.118:9001" size="40"><br><br>
+
+    <button onclick="connectMQTT()">Connect</button>
+    <p id="status">Status: Not Connected</p>
+
+    <hr>
+
+    <label>Topic:</label>
+    <input id="topic" value="esp/test" size="30"><br><br>
+
+    <label>Message:</label>
+    <input id="message" value="Hello ESP32" size="30"><br><br>
+
+    <button onclick="publishMessage()">Send Message</button>
+
+    <script>
+        let client;
+
+        function connectMQTT() {
+            const url = document.getElementById("broker").value;
+            client = mqtt.connect(url);
+
+            client.on("connect", () => {
+                document.getElementById("status").innerHTML = "Status: Connected";
+            });
+
+            client.on("error", err => {
+                document.getElementById("status").innerHTML = "Status: Error - " + err;
+            });
+        }
+
+        function publishMessage() {
+            const topic = document.getElementById("topic").value;
+            const msg = document.getElementById("message").value;
+
+            client.publish(topic, msg);
+            alert("Sent: " + msg);
+        }
+    </script>
+</body>
+</html>
