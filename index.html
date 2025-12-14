@@ -52,7 +52,13 @@
   <button id="offBtn" class="off" onclick="sendMessage('OFF')">OFF</button>
 
   <div id="status">Connecting...</div>
-  <div id="paymentStatus">Waiting for payment...</div>
+  <div id="paymentBox" style="margin-top:20px;">
+  <h3>Payment Details</h3>
+  <p>Amount: ₹<span id="amount">--</span></p>
+  <p>Status: <span id="paymentStatus">Waiting...</span></p>
+  <p>Time: <span id="time">--</span></p>
+</div>
+
 
   <script>
     /* ===== MQTT CONFIG ===== */
@@ -127,21 +133,31 @@ function sendMessage(message) {
     statusEl.textContent = "Sent OFF...";
   }
 }
-const eventSource = new EventSource("https://mqtt-backend-delta.vercel.app/events");
+const eventSource = new EventSource(
+  "https://mqtt-backend-delta.vercel.app/events"
+);
 
-  eventSource.onmessage = function (event) {
-    const payment = JSON.parse(event.data);
+eventSource.onmessage = function (event) {
+  const payment = JSON.parse(event.data);
 
-    console.log("💰 Payment received:", payment);
+  console.log("💰 Payment received:", payment);
 
-    document.getElementById("amount").innerText = payment.amount;
-    document.getElementById("status").innerText = payment.status;
-    document.getElementById("time").innerText = payment.time;
-  };
+  document.getElementById("amount").innerText = payment.amount;
+  document.getElementById("paymentStatus").innerText = payment.status;
+  document.getElementById("time").innerText =
+    new Date(payment.time).toLocaleString();
 
-  eventSource.onerror = function () {
-    console.log("SSE connection error");
-  };
+  // OPTIONAL: auto-enable ESP after payment
+  if (payment.status === "captured") {
+    statusEl.textContent = "Payment received. ESP32 ready.";
+    statusEl.style.color = "green";
+  }
+};
+
+eventSource.onerror = function () {
+  console.log("⚠️ SSE connection error");
+};
+
 
   </script>
 
