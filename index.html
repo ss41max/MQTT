@@ -131,6 +131,7 @@ setInterval(async () => {
   try {
     const res = await fetch("https://mqtt-backend-delta.vercel.app/latest-payment");
     const data = await res.json();
+    console.log("Payment Data:", data);
 
     if (data.status === "captured") {
       document.getElementById("paymentStatus").innerHTML =
