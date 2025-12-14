@@ -127,22 +127,21 @@ function sendMessage(message) {
     statusEl.textContent = "Sent OFF...";
   }
 }
-setInterval(async () => {
-  try {
-    const res = await fetch("https://mqtt-backend-delta.vercel.app/latest-payment");
-    const data = await res.json();
-    console.log("Payment Data:", data);
+const eventSource = new EventSource("https://mqtt-backend-delta.vercel.app/events");
 
-    if (data.status === "captured") {
-      document.getElementById("paymentStatus").innerHTML =
-        `✅ Payment Received<br>
-         Amount: ₹${data.amount}<br>
-         Payment ID: ${data.paymentId}`;
-    }
-  } catch (e) {
-    console.error("Payment fetch error");
-  }
-}, 5000);
+  eventSource.onmessage = function (event) {
+    const payment = JSON.parse(event.data);
+
+    console.log("💰 Payment received:", payment);
+
+    document.getElementById("amount").innerText = payment.amount;
+    document.getElementById("status").innerText = payment.status;
+    document.getElementById("time").innerText = payment.time;
+  };
+
+  eventSource.onerror = function () {
+    console.log("SSE connection error");
+  };
 
   </script>
 
