@@ -25,6 +25,7 @@
       cursor: pointer;
       border: none;
       border-radius: 8px;
+      transition: 0.2s;
     }
     .on {
       background-color: #28a745;
@@ -46,13 +47,13 @@
 
   <h1>ESP32 MQTT Control</h1>
 
-  <button class="on" onclick="sendMessage('ON')">ON</button>
-  <button class="off" onclick="sendMessage('OFF')">OFF</button>
+  <button id="onBtn" class="on" onclick="sendMessage('ON')">ON</button>
+  <button id="offBtn" class="off" onclick="sendMessage('OFF')">OFF</button>
 
   <div id="status">Connecting...</div>
 
   <script>
-    /* ========= MQTT CONFIG ========= */
+    /* ===== MQTT CONFIG ===== */
     const brokerUrl = "wss://d81c3cd5abb4432bb5b7729e27766fa9.s1.eu.hivemq.cloud:8884/mqtt";
     const options = {
       username: "ESP32_MQTT_test",
@@ -61,13 +62,14 @@
       connectTimeout: 4000
     };
 
-    // Use the same topic that ESP32 subscribes to
-    const controlTopic = "esp32/control"; 
+    const controlTopic = "esp32/control";
     const statusTopic = "esp32/status";
 
-    /* ========= CONNECT ========= */
+    /* ===== CONNECT TO MQTT ===== */
     const client = mqtt.connect(brokerUrl, options);
     const statusEl = document.getElementById("status");
+    const onBtn = document.getElementById("onBtn");
+    const offBtn = document.getElementById("offBtn");
 
     client.on("connect", () => {
       console.log("Connected to MQTT");
@@ -76,9 +78,7 @@
 
       // Subscribe to status updates
       client.subscribe(statusTopic, (err) => {
-        if (err) {
-          console.error("Failed to subscribe to status topic");
-        }
+        if (err) console.error("Failed to subscribe to status topic");
       });
     });
 
@@ -88,14 +88,24 @@
       statusEl.style.color = "red";
     });
 
-    // Listen for messages from ESP32
+    /* ===== RECEIVE STATUS ===== */
     client.on("message", (topic, message) => {
       if (topic === statusTopic) {
-        statusEl.textContent = "ESP32 State: " + message.toString();
+        const state = message.toString();
+        statusEl.textContent = "ESP32 State: " + state;
+
+        // Change button colors dynamically
+        if (state === "ON") {
+          onBtn.style.backgroundColor = "#28a745"; // green
+          offBtn.style.backgroundColor = "#aaa"; // gray
+        } else if (state === "OFF") {
+          offBtn.style.backgroundColor = "#dc3545"; // red
+          onBtn.style.backgroundColor = "#aaa"; // gray
+        }
       }
     });
 
-    /* ========= SEND MESSAGE ========= */
+    /* ===== SEND CONTROL MESSAGE ===== */
     function sendMessage(message) {
       if (!client.connected()) {
         alert("MQTT not connected");
