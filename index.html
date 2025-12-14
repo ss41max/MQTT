@@ -106,14 +106,26 @@
     });
 
     /* ===== SEND CONTROL MESSAGE ===== */
-    function sendMessage(message) {
-      if (!client.connected()) {
-        alert("MQTT not connected");
-        return;
-      }
-      client.publish(controlTopic, message);
-      console.log("Sent:", message);
-    }
+function sendMessage(message) {
+  if (!client.connected) {
+    alert("MQTT not connected");
+    return;
+  }
+  client.publish(controlTopic, message);
+  console.log("Sent:", message);
+
+  // Instant visual feedback
+  if (message === "ON") {
+    onBtn.style.backgroundColor = "#28a745";
+    offBtn.style.backgroundColor = "#aaa";
+    statusEl.textContent = "Sent ON...";
+  } else if (message === "OFF") {
+    offBtn.style.backgroundColor = "#dc3545";
+    onBtn.style.backgroundColor = "#aaa";
+    statusEl.textContent = "Sent OFF...";
+  }
+}
+
   </script>
 
 </body>
