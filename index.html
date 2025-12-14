@@ -5,6 +5,7 @@
   <title>ESP32 MQTT Control</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+
   <!-- MQTT.js -->
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 
@@ -51,6 +52,7 @@
   <button id="offBtn" class="off" onclick="sendMessage('OFF')">OFF</button>
 
   <div id="status">Connecting...</div>
+  <div id="paymentStatus">Waiting for payment...</div>
 
   <script>
     /* ===== MQTT CONFIG ===== */
@@ -125,6 +127,21 @@ function sendMessage(message) {
     statusEl.textContent = "Sent OFF...";
   }
 }
+setInterval(async () => {
+  try {
+    const res = await fetch("https://mqtt-backend-delta.vercel.app/latest-payment");
+    const data = await res.json();
+
+    if (data.status === "captured") {
+      document.getElementById("paymentStatus").innerHTML =
+        `✅ Payment Received<br>
+         Amount: ₹${data.amount}<br>
+         Payment ID: ${data.paymentId}`;
+    }
+  } catch (e) {
+    console.error("Payment fetch error");
+  }
+}, 5000);
 
   </script>
 
