@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ESP32 MQTT Control</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- MQTT.js -->
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f4f4f4;
+      padding: 40px;
+    }
+    h1 {
+      margin-bottom: 30px;
+    }
+    button {
+      font-size: 20px;
+      padding: 15px 30px;
+      margin: 10px;
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+    }
+    .on {
+      background-color: #28a745;
+      color: white;
+    }
+    .off {
+      background-color: #dc3545;
+      color: white;
+    }
+    #status {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>ESP32 MQTT Control</h1>
+
+  <button class="on" onclick="sendMessage('ON')">ON</button>
+  <button class="off" onclick="sendMessage('OFF')">OFF</button>
+
+  <div id="status">Connecting...</div>
+
+  <script>
+    /* ========= MQTT CONFIG ========= */
+    const brokerUrl = "wss://d81c3cd5abb4432bb5b7729e27766fa9.s1.eu.hivemq.cloud:8884/mqtt";
+
+    const options = {
+      username: "ESP32_MQTT_test",
+      password: "ESP@mqtt123",
+      clean: true,
+      connectTimeout: 4000
+    };
+
+    const topic = "esp32/control";
+
+    /* ========= CONNECT ========= */
+    const client = mqtt.connect(brokerUrl, options);
+
+    const statusEl = document.getElementById("status");
+
+    client.on("connect", () => {
+      console.log("Connected to MQTT");
+      statusEl.textContent = "Connected to ESP32";
+      statusEl.style.color = "green";
+    });
+
+    client.on("error", (err) => {
+      console.error("MQTT Error:", err);
+      statusEl.textContent = "Connection error";
+      statusEl.style.color = "red";
+    });
+
+    /* ========= SEND MESSAGE ========= */
+    function sendMessage(message) {
+      if (!client.connected) {
+        alert("MQTT not connected");
+        return;
+      }
+      client.publish(topic, message);
+      console.log("Sent:", message);
+    }
+  </script>
+
+</body>
+</html>
