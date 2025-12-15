@@ -1,7 +1,26 @@
-const token = localStorage.getItem("token");
-const role = localStorage.getItem("role");
-if (!token) window.location.href = "/login.html";
-if (role !== "admin" && window.location.pathname.endsWith("admin.html")) {
-  alert("Forbidden"); window.location.href = "/login.html";
-}
-<button id="logoutBtn">Logout</button>
+<!-- user.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>User</title>
+</head>
+<body>
+  <button id="logoutBtn">Logout</button>
+
+  <script>
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
+    if (!token) window.location.href = "/login.html";
+    if (role === "admin" && window.location.pathname.endsWith("user.html")) {
+      alert("Forbidden");
+      window.location.href = "/login.html";
+    }
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      localStorage.clear();
+      window.location.href = "/login.html";
+    });
+  </script>
+</body>
+</html>
