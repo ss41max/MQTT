@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
+  <button onclick="logout()">Logout</button>
   <meta charset="UTF-8" />
   <title>ESP32 Control Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -166,6 +168,12 @@
 </footer>
 
 <script>
+
+  const token = localStorage.getItem("token");
+  if (!token) {
+    window.location.href = "/login.html";
+  }
+
   /* ===== AUTH CHECK ===== */
   if (!localStorage.getItem("token")) {
     window.location.href = "/login.html";
@@ -219,6 +227,11 @@
     document.getElementById("time").innerText =
       payment.time ? new Date(payment.time).toLocaleString() : "--";
   }, 3000);
+
+    function logout() {
+    localStorage.clear();
+    window.location.href = "/login.html";
+    }
 </script>
 
 </body>
