@@ -13,10 +13,10 @@
 
   <style>
     :root {
-      --bg: #0f172a;          /* slate-900 */
-      --card: #111827;        /* gray-900 */
-      --muted: #94a3b8;       /* slate-400 */
-      --text: #e5e7eb;        /* gray-200 */
+      --bg: #0f172a;
+      --card: #111827;
+      --muted: #94a3b8;
+      --text: #e5e7eb;
       --green: #22c55e;
       --red: #ef4444;
       --blue: #3b82f6;
@@ -52,13 +52,11 @@
     .title {
       font-size: 26px;
       font-weight: 700;
-      letter-spacing: 0.3px;
     }
 
     .subtitle {
       font-size: 14px;
       color: var(--muted);
-      margin-top: 4px;
     }
 
     .status-pill {
@@ -84,16 +82,9 @@
       box-shadow: 0 20px 40px rgba(0,0,0,0.4);
     }
 
-    .card h2 {
-      margin: 0 0 16px 0;
-      font-size: 18px;
-      font-weight: 600;
-    }
-
     .controls {
       display: flex;
       gap: 16px;
-      margin-top: 10px;
     }
 
     button {
@@ -104,29 +95,22 @@
       font-size: 16px;
       font-weight: 600;
       cursor: pointer;
-      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-    }
-
-    button:active {
-      transform: scale(0.97);
     }
 
     .btn-on {
       background: linear-gradient(135deg, #16a34a, #22c55e);
       color: #052e16;
-      box-shadow: 0 10px 30px rgba(34,197,94,0.35);
     }
 
     .btn-off {
       background: linear-gradient(135deg, #b91c1c, #ef4444);
       color: #450a0a;
-      box-shadow: 0 10px 30px rgba(239,68,68,0.35);
     }
 
     .btn-disabled {
       background: #020617 !important;
       color: var(--muted) !important;
-      box-shadow: none !important;
+      pointer-events: none;
     }
 
     .payment-row {
@@ -134,14 +118,6 @@
       justify-content: space-between;
       margin-bottom: 10px;
       font-size: 15px;
-    }
-
-    .payment-row span:first-child {
-      color: var(--muted);
-    }
-
-    .payment-status {
-      font-weight: 600;
     }
 
     .footer-note {
@@ -158,110 +134,95 @@
 </head>
 
 <body>
-  <script src="main.js"></script>
-  <div class="container">
 
-    <div class="header">
-      <div>
-        <div class="title">ESP32 Control Dashboard</div>
-        <div class="subtitle">Secure MQTT + Payment Trigger</div>
-      </div>
-      <div id="status" class="status-pill">Connecting…</div>
+<!-- 🔐 AUTH GUARD -->
+<script>
+  const token = localStorage.getItem("token");
+  if (!token) {
+    window.location.href = "login.html";
+  }
+</script>
+
+<div class="container">
+
+  <div class="header">
+    <div>
+      <div class="title">ESP32 Control Dashboard</div>
+      <div class="subtitle">Secure MQTT + Payment Trigger</div>
     </div>
-
-    <div class="grid">
-      <!-- CONTROL CARD -->
-      <div class="card">
-        <h2>Device Control</h2>
-        <div class="controls">
-          <button id="onBtn" class="btn-on" onclick="sendMessage('ON')">Power ON</button>
-          <button id="offBtn" class="btn-off" onclick="sendMessage('OFF')">Power OFF</button>
-        </div>
-      </div>
-
-      <!-- PAYMENT CARD -->
-      <div class="card">
-        <h2>Payment Details</h2>
-        <div class="payment-row">
-          <span>Amount</span><span>₹<span id="amount">--</span></span>
-        </div>
-        <div class="payment-row">
-          <span>Status</span><span id="paymentStatus" class="payment-status">Waiting</span>
-        </div>
-        <div class="payment-row">
-          <span>Time</span><span id="time">--</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="footer-note">© ESP32 MQTT Interface • Production UI</div>
+    <div id="status" class="status-pill">Connecting…</div>
   </div>
 
-  <script>
-    /* ===== MQTT CONFIG ===== */
-    const brokerUrl = "wss://d81c3cd5abb4432bb5b7729e27766fa9.s1.eu.hivemq.cloud:8884/mqtt";
-    const options = {
-      username: "ESP32_MQTT_test",
-      password: "ESP@mqtt123",
-      clean: true,
-      connectTimeout: 4000
-    };
+  <div class="grid">
+    <!-- CONTROL CARD -->
+    <div class="card">
+      <h2>Device Control</h2>
+      <div class="controls">
+        <button id="onBtn" class="btn-on">Power ON</button>
+        <button id="offBtn" class="btn-off">Power OFF</button>
+      </div>
+    </div>
 
-    const controlTopic = "esp32/control";
-    const statusTopic = "esp32/status";
+    <!-- PAYMENT CARD -->
+    <div class="card">
+      <h2>Payment Details</h2>
+      <div class="payment-row">
+        <span>Amount</span><span>₹<span id="amount">--</span></span>
+      </div>
+      <div class="payment-row">
+        <span>Status</span><span id="paymentStatus">Waiting</span>
+      </div>
+      <div class="payment-row">
+        <span>Time</span><span id="time">--</span>
+      </div>
+    </div>
+  </div>
 
-    const client = mqtt.connect(brokerUrl, options);
+  <div class="footer-note">© ESP32 MQTT Interface</div>
+</div>
 
-    const statusEl = document.getElementById("status");
-    const onBtn = document.getElementById("onBtn");
-    const offBtn = document.getElementById("offBtn");
+<script>
+/* ===== MQTT CONFIG ===== */
+const brokerUrl = "wss://d81c3cd5abb4432bb5b7729e27766fa9.s1.eu.hivemq.cloud:8884/mqtt";
+const client = mqtt.connect(brokerUrl, {
+  username: "ESP32_MQTT_test",
+  password: "ESP@mqtt123"
+});
 
-    client.on("connect", () => {
-      statusEl.textContent = "Connected";
-      statusEl.style.color = "#22c55e";
-      client.subscribe(statusTopic);
-    });
+const controlTopic = "esp32/control";
+const statusTopic = "esp32/status";
 
-    client.on("error", () => {
-      statusEl.textContent = "Connection Error";
-      statusEl.style.color = "#ef4444";
-    });
+const statusEl = document.getElementById("status");
+const onBtn = document.getElementById("onBtn");
+const offBtn = document.getElementById("offBtn");
 
-    client.on("message", (topic, message) => {
-      if (topic === statusTopic) {
-        const state = message.toString();
-        statusEl.textContent = "ESP32: " + state;
+client.on("connect", () => {
+  statusEl.textContent = "Connected";
+  statusEl.style.color = "#22c55e";
+  client.subscribe(statusTopic);
+});
 
-        if (state === "ON") {
-          onBtn.classList.remove("btn-disabled");
-          offBtn.classList.add("btn-disabled");
-        } else {
-          offBtn.classList.remove("btn-disabled");
-          onBtn.classList.add("btn-disabled");
-        }
-      }
-    });
+client.on("message", (topic, message) => {
+  if (topic === statusTopic) {
+    statusEl.textContent = "ESP32: " + message.toString();
+  }
+});
 
-    function sendMessage(message) {
-      if (!client.connected) return alert("MQTT not connected");
-      client.publish(controlTopic, message);
-      statusEl.textContent = "Command sent: " + message;
-    }
+onBtn.onclick = () => client.publish(controlTopic, "ON");
+offBtn.onclick = () => client.publish(controlTopic, "OFF");
 
-    /* ===== PAYMENT SSE ===== */
-    const eventSource = new EventSource("https://mqtt-backend-delta.vercel.app/events");
+/* ===== PAYMENT SSE (JWT via query) ===== */
+const eventSource = new EventSource(
+  `https://mqtt-backend-delta.vercel.app/events?token=${token}`
+);
 
-    eventSource.onmessage = (event) => {
-      const payment = JSON.parse(event.data);
-      document.getElementById("amount").innerText = payment.amount;
-      document.getElementById("paymentStatus").innerText = payment.status;
-      document.getElementById("time").innerText = new Date(payment.time).toLocaleString();
+eventSource.onmessage = (event) => {
+  const p = JSON.parse(event.data);
+  document.getElementById("amount").innerText = p.amount;
+  document.getElementById("paymentStatus").innerText = p.status;
+  document.getElementById("time").innerText = new Date(p.time).toLocaleString();
+};
+</script>
 
-      if (payment.status === "captured") {
-        statusEl.textContent = "Payment Received • Device Ready";
-        statusEl.style.color = "#22c55e";
-      }
-    };
-  </script>
 </body>
 </html>
