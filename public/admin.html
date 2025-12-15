@@ -1,0 +1,14 @@
+const token = localStorage.getItem("token");
+const role = localStorage.getItem("role");
+if (!token) window.location.href = "/login.html";
+if (role !== "admin" && window.location.pathname.endsWith("admin.html")) {
+  alert("Forbidden"); window.location.href = "/login.html";
+}
+
+const token = localStorage.getItem("token");
+const res = await fetch("/transactions", {
+  headers: { Authorization: `Bearer ${token}` }
+});
+const transactions = await res.json();
+console.table(transactions);
+<button id="logoutBtn">Logout</button>

@@ -1,0 +1,7 @@
+const token = localStorage.getItem("token");
+const role = localStorage.getItem("role");
+if (!token) window.location.href = "/login.html";
+if (role !== "admin" && window.location.pathname.endsWith("admin.html")) {
+  alert("Forbidden"); window.location.href = "/login.html";
+}
+<button id="logoutBtn">Logout</button>
