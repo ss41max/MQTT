@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
-  <button onclick="logout()">Logout</button>
   <meta charset="UTF-8" />
   <title>ESP32 Control Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -21,7 +19,6 @@
       --text: #e5e7eb;
       --green: #22c55e;
       --red: #ef4444;
-      --blue: #3b82f6;
       --border: #1f2933;
     }
 
@@ -42,11 +39,6 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 30px;
-    }
-
-    header h1 {
-      font-size: 24px;
-      font-weight: 700;
     }
 
     .logout {
@@ -101,25 +93,8 @@
       font-weight: 600;
     }
 
-    .on {
-      background: var(--green);
-      color: #052e16;
-    }
-
-    .off {
-      background: var(--red);
-      color: #450a0a;
-    }
-
-    .payment p {
-      margin: 6px 0;
-      color: var(--muted);
-    }
-
-    .payment span {
-      color: var(--text);
-      font-weight: 600;
-    }
+    .on { background: var(--green); color: #052e16; }
+    .off { background: var(--red); color: #450a0a; }
 
     footer {
       margin-top: 40px;
@@ -132,6 +107,13 @@
 
 <body>
 
+<script>
+  /* ===== AUTH GUARD ===== */
+  if (!localStorage.getItem("token")) {
+    window.location.href = "login.html";
+  }
+</script>
+
 <header>
   <h1>ESP32 Control Dashboard</h1>
   <button class="logout" onclick="logout()">Logout</button>
@@ -139,7 +121,6 @@
 
 <div class="container">
 
-  <!-- Status Card -->
   <div class="card">
     <div class="status">
       <div id="statusDot" class="dot"></div>
@@ -147,91 +128,54 @@
     </div>
   </div>
 
-  <!-- Control Card -->
   <div class="card controls">
     <button class="control on" onclick="sendMessage('ON')">Turn ON</button>
     <button class="control off" onclick="sendMessage('OFF')">Turn OFF</button>
   </div>
 
-  <!-- Payment Card -->
-  <div class="card payment">
-    <h3>Payment Details</h3>
-    <p>Amount: ₹ <span id="amount">--</span></p>
-    <p>Status: <span id="paymentStatus">Waiting</span></p>
-    <p>Time: <span id="time">--</span></p>
-  </div>
-
 </div>
 
 <footer>
-  Final Year Major Project • ESP32 + MQTT + Razorpay
+  Final Year Major Project • ESP32 + MQTT
 </footer>
 
 <script>
-
-const token = localStorage.getItem("token");
-if (!token) {
-  window.location.href = "login.html";
-  }
-
-  /* ===== AUTH CHECK ===== */
-  if (!localStorage.getItem("token")) {
-    window.location.href = "/login.html";
-  }
-
   function logout() {
     localStorage.clear();
-    window.location.href = "/login.html";
+    window.location.href = "login.html";
   }
 
-  /* ===== MQTT CONFIG ===== */
+  /* ===== MQTT ===== */
   const brokerUrl = "wss://d81c3cd5abb4432bb5b7729e27766fa9.s1.eu.hivemq.cloud:8884/mqtt";
-  const options = {
+
+  const client = mqtt.connect(brokerUrl, {
     username: "ESP32_MQTT_test",
     password: "ESP@mqtt123",
-    clean: true,
-    connectTimeout: 4000
-  };
+    clean: true
+  });
 
-  const controlTopic = "esp32/control";
-  const statusTopic = "esp32/status";
-
-  const client = mqtt.connect(brokerUrl, options);
   const statusEl = document.getElementById("status");
   const dot = document.getElementById("statusDot");
 
   client.on("connect", () => {
     statusEl.textContent = "Connected to ESP32";
     dot.style.background = "#22c55e";
-    client.subscribe(statusTopic);
+    client.subscribe("esp32/status");
   });
 
-  client.on("message", (topic, message) => {
+  client.on("message", (_, message) => {
     const state = message.toString();
     statusEl.textContent = "ESP32 State: " + state;
     dot.style.background = state === "ON" ? "#22c55e" : "#ef4444";
   });
 
   function sendMessage(msg) {
-    if (!client.connected) return alert("MQTT not connected");
-    client.publish(controlTopic, msg);
-  }
-
-  /* ===== PAYMENT POLLING (VERCEL SAFE) ===== */
-  setInterval(async () => {
-    const res = await fetch("https://mqtt-backend-delta.vercel.app/latest-payment");
-    const payment = await res.json();
-
-    document.getElementById("amount").innerText = payment.amount || "--";
-    document.getElementById("paymentStatus").innerText = payment.status || "--";
-    document.getElementById("time").innerText =
-      payment.time ? new Date(payment.time).toLocaleString() : "--";
-  }, 3000);
-
-    function logout() {
-    localStorage.clear();
-    window.location.href = "/login.html";
+    if (!client.connected) {
+      alert("MQTT not connected");
+      return;
     }
+    client.publish("esp32/control", msg);
+  }
 </script>
 
 </body>

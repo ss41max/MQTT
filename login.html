@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>Login</title>
+
   <style>
     body {
-      font-family: Arial;
+      font-family: Arial, sans-serif;
       background: #111;
       color: #fff;
       display: flex;
@@ -13,29 +14,34 @@
       align-items: center;
       height: 100vh;
     }
+
     .box {
       background: #1e1e1e;
       padding: 30px;
       border-radius: 10px;
       width: 300px;
     }
+
     input, button {
       width: 100%;
       padding: 10px;
       margin-top: 10px;
     }
+
     button {
       background: #28a745;
       border: none;
       color: white;
       cursor: pointer;
     }
+
     .err {
       color: red;
       margin-top: 10px;
     }
   </style>
 </head>
+
 <body>
 
 <div class="box">
@@ -58,6 +64,7 @@ async function login() {
   });
 
   const data = await res.json();
+  console.log("LOGIN RESPONSE:", res.status, data);
 
   if (!res.ok) {
     document.getElementById("err").innerText = data.error || "Login failed";
@@ -67,11 +74,8 @@ async function login() {
   localStorage.setItem("token", data.token);
   localStorage.setItem("role", data.role);
 
-  if (data.role === "admin") {
-    window.location.href = "admin.html";
-  } else {
-    window.location.href = "index.html";
-  }
+  window.location.href =
+    data.role === "admin" ? "admin.html" : "index.html";
 }
 </script>
 
