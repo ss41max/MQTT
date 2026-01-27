@@ -35,19 +35,13 @@
     }
 
     header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      text-align: center;
       margin-bottom: 30px;
     }
 
-    .logout {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--muted);
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
+    header h1 {
+      font-size: 24px;
+      font-weight: 700;
     }
 
     .container {
@@ -93,8 +87,15 @@
       font-weight: 600;
     }
 
-    .on { background: var(--green); color: #052e16; }
-    .off { background: var(--red); color: #450a0a; }
+    .on {
+      background: var(--green);
+      color: #052e16;
+    }
+
+    .off {
+      background: var(--red);
+      color: #450a0a;
+    }
 
     footer {
       margin-top: 40px;
@@ -107,20 +108,13 @@
 
 <body>
 
-<script>
-  /* ===== AUTH GUARD ===== */
-  if (!localStorage.getItem("token")) {
-    window.location.href = "login.html";
-  }
-</script>
-
 <header>
   <h1>ESP32 Control Dashboard</h1>
-  <button class="logout" onclick="logout()">Logout</button>
 </header>
 
 <div class="container">
 
+  <!-- STATUS CARD -->
   <div class="card">
     <div class="status">
       <div id="statusDot" class="dot"></div>
@@ -128,6 +122,7 @@
     </div>
   </div>
 
+  <!-- CONTROL CARD -->
   <div class="card controls">
     <button class="control on" onclick="sendMessage('ON')">Turn ON</button>
     <button class="control off" onclick="sendMessage('OFF')">Turn OFF</button>
@@ -140,18 +135,15 @@
 </footer>
 
 <script>
-  function logout() {
-    localStorage.clear();
-    window.location.href = "login.html";
-  }
-
-  /* ===== MQTT ===== */
-  const brokerUrl = "wss://d81c3cd5abb4432bb5b7729e27766fa9.s1.eu.hivemq.cloud:8884/mqtt";
+  /* ===== MQTT CONFIG ===== */
+  const brokerUrl =
+    "wss://d81c3cd5abb4432bb5b7729e27766fa9.s1.eu.hivemq.cloud:8884/mqtt";
 
   const client = mqtt.connect(brokerUrl, {
     username: "ESP32_MQTT_test",
     password: "ESP@mqtt123",
-    clean: true
+    clean: true,
+    connectTimeout: 4000
   });
 
   const statusEl = document.getElementById("status");
@@ -163,10 +155,21 @@
     client.subscribe("esp32/status");
   });
 
+  client.on("reconnect", () => {
+    statusEl.textContent = "Reconnecting...";
+    dot.style.background = "#facc15";
+  });
+
+  client.on("offline", () => {
+    statusEl.textContent = "MQTT Offline";
+    dot.style.background = "#ef4444";
+  });
+
   client.on("message", (_, message) => {
     const state = message.toString();
     statusEl.textContent = "ESP32 State: " + state;
-    dot.style.background = state === "ON" ? "#22c55e" : "#ef4444";
+    dot.style.background =
+      state === "ON" ? "#22c55e" : "#ef4444";
   });
 
   function sendMessage(msg) {
