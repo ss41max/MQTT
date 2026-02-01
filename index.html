@@ -1,185 +1,159 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <title>ESP32 Control Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TREATMATE | Smart Dog Feeding Solution</title>
 
-  <!-- MQTT.js -->
-  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
-  <!-- Google Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
 
-  <style>
-    :root {
-      --bg: #0f172a;
-      --card: #111827;
-      --muted: #94a3b8;
-      --text: #e5e7eb;
-      --green: #22c55e;
-      --red: #ef4444;
-      --border: #1f2933;
-    }
-
-    * {
-      box-sizing: border-box;
-      font-family: 'Inter', sans-serif;
-    }
-
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      padding: 30px;
-    }
-
-    header {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-
-    header h1 {
-      font-size: 24px;
-      font-weight: 700;
-    }
-
-    .container {
-      max-width: 900px;
-      margin: auto;
-      display: grid;
-      gap: 20px;
-    }
-
-    .card {
-      background: var(--card);
-      border-radius: 12px;
-      padding: 20px;
-      border: 1px solid var(--border);
-    }
-
-    .status {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 600;
-    }
-
-    .dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--muted);
-    }
-
-    .controls {
-      display: flex;
-      gap: 20px;
-      justify-content: center;
-    }
-
-    button.control {
-      padding: 14px 32px;
-      font-size: 16px;
-      border-radius: 10px;
-      border: none;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    .on {
-      background: var(--green);
-      color: #052e16;
-    }
-
-    .off {
-      background: var(--red);
-      color: #450a0a;
-    }
-
-    footer {
-      margin-top: 40px;
-      text-align: center;
-      color: var(--muted);
-      font-size: 13px;
-    }
-  </style>
+    <!-- SweetAlert2 for Popups -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body>
 
-<header>
-  <h1>ESP32 Control Dashboard</h1>
-</header>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="#" class="logo">
+                <span style="font-size: 1.8rem;">🐾</span> TREATMATE
+            </a>
+            <div class="mobile-toggle">☰</div>
+            <ul class="nav-links">
+                <li><a href="#home" class="nav-link">Home</a></li>
+                <li><a href="#features" class="nav-link">Features</a></li>
+                <li><button id="admin-login-btn" class="btn-secondary">Admin Login</button></li>
+                <li><a href="#contact" class="btn-primary">Connect Device</a></li>
+            </ul>
+        </div>
+    </nav>
 
-<div class="container">
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <h1>Smart Treats for <br>Happy Tails</h1>
+            <p>Experience the future of pet care with TREATMATE. Our automated vending solution ensures your best friend
+                is fed, happy, and healthy, even when you're busy.</p>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button id="btn-get-started" class="btn-primary">Get Started</button>
+                <a href="#features" class="btn-primary"
+                    style="background: white; color: var(--text-dark); border: 1px solid #E5E7EB;">Learn More</a>
+            </div>
+        </div>
+        <div class="hero-image">
+            <img src="hero-image.png" alt="Happy Golden Retriever with TREATMATE Vending Machine">
+        </div>
+    </section>
 
-  <!-- STATUS CARD -->
-  <div class="card">
-    <div class="status">
-      <div id="statusDot" class="dot"></div>
-      <div id="status">Connecting to ESP32...</div>
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <h2 class="section-title">Why Choose TREATMATE?</h2>
+        <div class="vending-grid">
+            <div class="card">
+                <div class="card-icon">📱</div>
+                <h3>Remote Control</h3>
+                <p>Control the vending machine from anywhere using your smartphone via MQTT protocol.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">🥗</div>
+                <h3>Healthy Portions</h3>
+                <p>Automated portion control ensures your dog gets exactly the right amount of nutrition.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">🕒</div>
+                <h3>Scheduled Feeding</h3>
+                <p>Set up automatic feeding schedules so you never miss a meal time.</p>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Payment Modal -->
+    <div class="modal-overlay" id="paymentModal">
+        <div class="payment-modal">
+            <h2 style="margin-bottom: 0.5rem; color: var(--text-dark);">Select Amount</h2>
+            <p style="color: var(--text-light);">Choose how many grams to dispense</p>
+
+            <!-- Amount Selection Buttons -->
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin: 1.5rem 0;">
+                <button class="amount-btn" data-amount="1" style="border-color: #3B82F6; background: #EFF6FF;">
+                    <div style="font-size: 1.5rem; font-weight: 700; color: #1D4ED8;">₹1</div>
+                    <div style="font-size: 0.875rem; color: #1D4ED8;">Test (1g)</div>
+                </button>
+                <button class="amount-btn" data-amount="10">
+                    <div style="font-size: 1.5rem; font-weight: 700;">₹10</div>
+                    <div style="font-size: 0.875rem; color: var(--text-light);">10 grams</div>
+                </button>
+                <button class="amount-btn" data-amount="20">
+                    <div style="font-size: 1.5rem; font-weight: 700;">₹20</div>
+                    <div style="font-size: 0.875rem; color: var(--text-light);">20 grams</div>
+                </button>
+                <button class="amount-btn" data-amount="50">
+                    <div style="font-size: 1.5rem; font-weight: 700;">₹50</div>
+                    <div style="font-size: 0.875rem; color: var(--text-light);">50 grams</div>
+                </button>
+                <button class="amount-btn" data-amount="100">
+                    <div style="font-size: 1.5rem; font-weight: 700;">₹100</div>
+                    <div style="font-size: 0.875rem; color: var(--text-light);">100 grams</div>
+                </button>
+            </div>
+
+            <div id="payment-status-container" style="display: none; text-align: center; margin: 1.5rem 0;">
+                <div class="spinner"
+                    style="margin: 0 auto 1rem; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3B82F6; border-radius: 50%; animation: spin 1s linear infinite;">
+                </div>
+                <p id="payment-status-text" style="font-size: 1rem; color: var(--text-dark); font-weight: 500;">🚀
+                    Initiating Secure Payment...</p>
+                <p style="font-size: 0.85rem; color: var(--text-light); margin-top: 0.5rem;">Please complete the payment
+                    in the Razorpay window.</p>
+            </div>
+
+            <style>
+                @keyframes spin {
+                    0% {
+                        transform: rotate(0deg);
+                    }
+
+                    100% {
+                        transform: rotate(360deg);
+                    }
+                }
+            </style>
+
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <button class="btn btn-secondary" id="btn-cancel-pay" style="width: 100%;">Cancel Transaction</button>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <!-- CONTROL CARD -->
-  <div class="card controls">
-    <button class="control on" onclick="sendMessage('ON')">Turn ON</button>
-    <button class="control off" onclick="sendMessage('OFF')">Turn OFF</button>
-  </div>
+    <!-- Footer -->
+    <footer id="contact">
+        <div class="footer-content">
+            <div class="logo" style="color: white; justify-content: center; margin-bottom: 1rem;">
+                <span style="font-size: 1.8rem;">🐾</span> TREATMATE
+            </div>
+            <p>Innovating pet care with technology.</p>
+            <div class="footer-links">
+                <a href="#" class="footer-link">Privacy Policy</a>
+                <a href="#" class="footer-link">Terms of Service</a>
+                <a href="#" class="footer-link">Support</a>
+            </div>
+            <p style="color: #6B7280; font-size: 0.9rem;">&copy; 2026 TREATMATE. All rights reserved.</p>
+        </div>
+    </footer>
 
-</div>
-
-<footer>
-  Final Year Major Project • ESP32 + MQTT
-</footer>
-
-<script>
-  /* ===== MQTT CONFIG ===== */
-  const brokerUrl =
-    "wss://d81c3cd5abb4432bb5b7729e27766fa9.s1.eu.hivemq.cloud:8884/mqtt";
-
-  const client = mqtt.connect(brokerUrl, {
-    username: "ESP32_MQTT_test",
-    password: "ESP@mqtt123",
-    clean: true,
-    connectTimeout: 4000
-  });
-
-  const statusEl = document.getElementById("status");
-  const dot = document.getElementById("statusDot");
-
-  client.on("connect", () => {
-    statusEl.textContent = "Connected to ESP32";
-    dot.style.background = "#22c55e";
-    client.subscribe("esp32/status");
-  });
-
-  client.on("reconnect", () => {
-    statusEl.textContent = "Reconnecting...";
-    dot.style.background = "#facc15";
-  });
-
-  client.on("offline", () => {
-    statusEl.textContent = "MQTT Offline";
-    dot.style.background = "#ef4444";
-  });
-
-  client.on("message", (_, message) => {
-    const state = message.toString();
-    statusEl.textContent = "ESP32 State: " + state;
-    dot.style.background =
-      state === "ON" ? "#22c55e" : "#ef4444";
-  });
-
-  function sendMessage(msg) {
-    if (!client.connected) {
-      alert("MQTT not connected");
-      return;
-    }
-    client.publish("esp32/control", msg);
-  }
-</script>
-
+    <!-- Scripts -->
+    <script src="script.js"></script>
 </body>
+
 </html>
