@@ -12,8 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let client = null;
     let isConnected = false;
 
-    // Backend API URL
-    const BACKEND_URL = 'http://localhost:3000'; // Make sure this matches your backend PORT
+    // Backend API URL (auto-detect based on current domain)
+    const BACKEND_URL = window.location.hostname === 'localhost'
+      ? 'http://localhost:3000'
+      : 'https://mqtt-backend-blond.vercel.app'; // Your deployed Vercel URL
 
 
     // UI Elements
@@ -136,6 +138,145 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     initMQTT();
+
+    /* ===== PAYMENT NOTIFICATION SYSTEM FOR ADMIN ===== */
+    function showAdminToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `payment-toast toast-${type}`;
+      toast.innerHTML = message;
+      toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#10B981' : type === 'error' ? '#EF4444' : '#3B82F6'};
+        color: white;
+        padding: 16px 24px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 9999;
+        font-weight: 600;
+        font-size: 14px;
+        max-width: 400px;
+        word-wrap: break-word;
+        animation: slideIn 0.3s ease-out;
+      `;
+      document.body.appendChild(toast);
+      
+      // Add animation if not already added
+      if (!document.querySelector('style[data-toast-animation]')) {
+        const style = document.createElement('style');
+        style.setAttribute('data-toast-animation', 'true');
+        style.textContent = `
+          @keyframes slideIn {
+            from {
+              transform: translateX(400px);
+              opacity: 0;
+            }
+            to {
+              transform: translateX(0);
+              opacity: 1;
+            }
+          }
+          @keyframes slideOut {
+            from {
+              transform: translateX(0);
+              opacity: 1;
+            }
+            to {
+              transform: translateX(400px);
+              opacity: 0;
+            }
+          }
+          .payment-toast.removing {
+            animation: slideOut 0.3s ease-out forwards;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+      
+      // Auto remove after 5 seconds
+      setTimeout(() => {
+        toast.classList.add('removing');
+        setTimeout(() => toast.remove(), 300);
+      }, 5000);
+    }
+
+    // Connect to real-time payment notifications
+    function connectToPaymentEvents() {
+      try {
+        const eventSource = new EventSource(`${BACKEND_URL}/events`);
+        
+        eventSource.onmessage = (event) => {
+          try {
+            const payment = JSON.parse(event.data);
+            console.log('💳 Payment Received (Admin):', payment);
+            
+            // Show success notification
+            showAdminToast(
+              `💳 New Payment: ₹${payment.amount}<br>⚙️ ESP32 Dispensing ${payment.amount}g...`,
+              'success'
+            );
+
+            // Update transactions table
+            updatePaymentsTable(payment);
+          } catch (e) {
+            console.error('Error parsing payment data:', e);
+          }
+        };
+        
+        eventSource.onerror = (error) => {
+          console.warn('Payment notification connection lost, reconnecting...');
+          eventSource.close();
+          // Retry after 5 seconds
+          setTimeout(connectToPaymentEvents, 5000);
+        };
+
+        console.log('✅ Admin connected to real-time payments');
+      } catch (e) {
+        console.error('Failed to connect to payment events:', e);
+      }
+    }
+
+    // Update transactions table with new payment
+    function updatePaymentsTable(payment) {
+      if (transactionsBody) {
+        const row = document.createElement('tr');
+        row.className = 'new-transaction';
+        row.style.cssText = `
+          background: #F0FDF4;
+          animation: highlightFade 2s ease-out;
+        `;
+        row.innerHTML = `
+          <td style="font-weight: 600; color: #10B981;">₹${payment.amount}</td>
+          <td>${payment.paymentId || 'N/A'}</td>
+          <td style="color: #10B981; font-weight: 500;">✅ ${payment.status}</td>
+          <td style="font-size: 0.85rem; color: #666;">${new Date(payment.time).toLocaleTimeString()}</td>
+        `;
+        transactionsBody.insertBefore(row, transactionsBody.firstChild);
+      }
+
+      // Add CSS animation for highlight fade
+      if (!document.querySelector('style[data-highlight-animation]')) {
+        const style = document.createElement('style');
+        style.setAttribute('data-highlight-animation', 'true');
+        style.textContent = `
+          @keyframes highlightFade {
+            0% {
+              background: #D1FAE5;
+              transform: scale(1.02);
+            }
+            100% {
+              background: transparent;
+              transform: scale(1);
+            }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    }
+
+    // Start listening for payments
+    connectToPaymentEvents();
 
     // --- Backend API Integration ---
     async function loadStats() {

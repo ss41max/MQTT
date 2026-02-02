@@ -13,6 +13,9 @@
         rel="stylesheet">
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
+    <!-- Paho MQTT Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+
     <!-- Styles -->
     <link rel="stylesheet" href="style.css">
 
@@ -32,6 +35,14 @@
             <ul class="nav-links">
                 <li><a href="#home" class="nav-link">Home</a></li>
                 <li><a href="#features" class="nav-link">Features</a></li>
+                <li
+                    style="display: flex; align-items: center; gap: 0.5rem; margin: 0 1rem; border: 1px solid #E5E7EB; padding: 0.35rem 0.75rem; border-radius: 99px;">
+                    <div id="status-dot"
+                        style="width: 10px; height: 10px; border-radius: 50%; background: #9CA3AF; transition: background 0.3s ease;">
+                    </div>
+                    <span id="status-text"
+                        style="font-size: 0.85rem; font-weight: 500; color: var(--text-light);">Machine Offline</span>
+                </li>
                 <li><button id="admin-login-btn" class="btn-secondary">Admin Login</button></li>
                 <li><a href="#contact" class="btn-primary">Connect Device</a></li>
             </ul>

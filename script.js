@@ -11,9 +11,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let client = null;
     let isConnected = false;
+    let deviceHeartbeatTimer = null;
 
-    // Backend API URL (change to your deployed URL)
-    const BACKEND_URL = 'http://localhost:3000'; // Change to production URL when deployed
+    // Backend API URL (auto-detect based on current domain)
+    const BACKEND_URL = window.location.hostname === 'localhost' 
+      ? 'http://localhost:3000'
+      : 'https://mqtt-backend-blond.vercel.app'; // Your deployed Vercel URL
     let currentOrderId = null;
     let paymentPollInterval = null;
 
@@ -44,9 +47,13 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("MQTT Connected!");
         isConnected = true;
 
-        // Subscribe to dispense confirmation
+        // Subscribe to dispense confirmation and status
         client.subscribe("esp32/dispense/confirm");
-        console.log("Subscribed to esp32/dispense/confirm");
+        client.subscribe("esp32/status");
+        console.log("Subscribed to esp32 Topics");
+        
+        // Show device as online immediately when MQTT connects
+        updateDeviceStatus(true);
     }
 
     function onFailure(message) {
@@ -73,6 +80,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 timer: 3000
             });
         }
+
+        // Handle Heartbeat (PING)
+        if (message.destinationName === "esp32/status" && message.payloadString === "PING") {
+            updateDeviceStatus(true);
+        }
+    }
+
+    function updateDeviceStatus(online) {
+        const dot = document.getElementById('status-dot');
+        const text = document.getElementById('status-text');
+
+        if (online) {
+            if (dot) dot.style.background = '#10B981'; // Green
+            if (text) text.textContent = 'Machine Online';
+
+            // Reset timeout
+            if (deviceHeartbeatTimer) clearTimeout(deviceHeartbeatTimer);
+            deviceHeartbeatTimer = setTimeout(() => updateDeviceStatus(false), 12000); // 12s timeout
+        } else {
+            if (dot) dot.style.background = '#EF4444'; // Red
+            if (text) text.textContent = 'Machine Offline';
+        }
     }
 
     function sendMqttMessage(msg) {
@@ -89,6 +118,131 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Start Connection
     initMQTT();
+
+    /* ===== PAYMENT NOTIFICATION SYSTEM ===== */
+    // Toast notification function
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `payment-toast toast-${type}`;
+      toast.innerHTML = message;
+      toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#10B981' : type === 'error' ? '#EF4444' : '#3B82F6'};
+        color: white;
+        padding: 16px 24px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 9999;
+        font-weight: 600;
+        font-size: 14px;
+        max-width: 400px;
+        word-wrap: break-word;
+        animation: slideIn 0.3s ease-out;
+      `;
+      document.body.appendChild(toast);
+      
+      // Add animation
+      const style = document.createElement('style');
+      if (!document.querySelector('style[data-toast-animation]')) {
+        style.setAttribute('data-toast-animation', 'true');
+        style.textContent = `
+          @keyframes slideIn {
+            from {
+              transform: translateX(400px);
+              opacity: 0;
+            }
+            to {
+              transform: translateX(0);
+              opacity: 1;
+            }
+          }
+          @keyframes slideOut {
+            from {
+              transform: translateX(0);
+              opacity: 1;
+            }
+            to {
+              transform: translateX(400px);
+              opacity: 0;
+            }
+          }
+          .payment-toast.removing {
+            animation: slideOut 0.3s ease-out forwards;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+      
+      // Auto remove after 5 seconds
+      setTimeout(() => {
+        toast.classList.add('removing');
+        setTimeout(() => toast.remove(), 300);
+      }, 5000);
+    }
+
+    // Connect to payment notifications via SSE
+    function connectToPaymentEvents() {
+      try {
+        const eventSource = new EventSource(`${BACKEND_URL}/events`);
+        
+        eventSource.onmessage = (event) => {
+          try {
+            const payment = JSON.parse(event.data);
+            console.log('💳 Payment Notification Received:', payment);
+            
+            // Show success notification
+            showToast(
+              `💳 Payment of ₹${payment.amount} received!<br>⚙️ Machine dispensing ${payment.amount}g...`,
+              'success'
+            );
+
+            // Update dashboard if admin is watching
+            if (window.location.pathname.includes('admin')) {
+              updateAdminDashboard(payment);
+            }
+          } catch (e) {
+            console.error('Error parsing payment data:', e);
+          }
+        };
+        
+        eventSource.onerror = (error) => {
+          console.warn('SSE Connection Lost, reconnecting...');
+          eventSource.close();
+          // Retry after 5 seconds
+          setTimeout(connectToPaymentEvents, 5000);
+        };
+
+        console.log('✅ Connected to payment notifications');
+      } catch (e) {
+        console.error('Failed to connect to payment events:', e);
+      }
+    }
+
+    // Call on page load
+    connectToPaymentEvents();
+
+    // Helper function to update admin dashboard
+    function updateAdminDashboard(payment) {
+      const paymentsList = document.getElementById('payments-list');
+      if (paymentsList) {
+        const entry = document.createElement('div');
+        entry.className = 'payment-entry';
+        entry.innerHTML = `
+          <div style="display: flex; justify-content: space-between; padding: 12px; background: #F0FDF4; border-left: 4px solid #10B981; margin: 8px 0; border-radius: 4px;">
+            <div>
+              <p style="margin: 0; font-weight: 600; color: #10B981;">₹${payment.amount}</p>
+              <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #666;">${new Date().toLocaleTimeString()}</p>
+            </div>
+            <div style="text-align: right;">
+              <p style="margin: 0; font-size: 0.9rem; color: #10B981;">✅ ${payment.status}</p>
+            </div>
+          </div>
+        `;
+        paymentsList.insertBefore(entry, paymentsList.firstChild);
+      }
+    }
 
     // --- Real Razorpay Payment Functions ---
 
