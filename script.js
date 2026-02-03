@@ -69,15 +69,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function onMessageArrived(message) {
-        console.log("Message Arrived: " + message.payloadString);
+        console.log("📥 MQTT Message Arrived on topic:", message.destinationName);
+        console.log("📦 Payload:", message.payloadString);
 
         // Handle dispense confirmation from ESP32
         if (message.destinationName === "esp32/dispense/confirm") {
+            console.log("✅ Dispense confirmation received!");
+            
+            // Close any open modals first
+            const modal = document.getElementById('paymentModal');
+            if (modal) {
+                modal.classList.remove('show');
+            }
+            
+            // Show success popup
             Swal.fire({
-                title: 'Dispensed Successfully!',
+                title: '✅ Dispensed Successfully!',
                 text: `Actual weight: ${message.payloadString}`,
                 icon: 'success',
-                timer: 3000
+                timer: 5000,
+                showConfirmButton: true,
+                confirmButtonText: 'Great!',
+                confirmButtonColor: '#10B981'
             });
         }
 
