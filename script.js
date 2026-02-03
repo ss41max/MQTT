@@ -440,8 +440,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // 1. Trigger Dispense via Frontend MQTT (Fast Response)
-            sendMqttMessage(`DISPENSE:${selectedAmount}`);
+            // REMOVED: Frontend no longer triggers MQTT directly
+            // Backend webhook will handle the MQTT trigger automatically
+            // This prevents double dispensing
+            
+            // 1. Trigger Dispense via Frontend MQTT (DISABLED to prevent double dispense)
+            // sendMqttMessage(`DISPENSE:${selectedAmount}`);
 
             // 2. Log to Backend (For Stats and Dashboard)
             // Even though we aren't polling, we tell the backend this "simulated" payment happened
